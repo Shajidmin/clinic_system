@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-12">
+    <h1 class="h4">Doctor Dashboard — Dr. {{ user.get_full_name|default:user.username }}</h1>
+  </div>
+
+  {% if message %}
+    <div class="col-12"><div class="alert alert-success">{{ message }}</div></div>
+  {% endif %}
+  {% if error %}
+    <div class="col-12"><div class="alert alert-danger">{{ error }}</div></div>
+  {% endif %}
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>Manage Availability</strong></div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_slots">
+          <div class="mb-2">
+            <label class="form-label"><strong>Available days</strong></label>
+            <div>
+              {% for code,label in days_choices %}
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="available_days" value="{{ code }}" id="day_{{ code }}" {% if code in doctor.available_days %}checked{% endif %}>
+                  <label class="form-check-label" for="day_{{ code }}">{{ label }}</label>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label"><strong>Time slots</strong></label>
+            <div>
+              {% for code,label in time_slots_choices %}
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="time_slots" value="{{ code }}" id="slot_{{ code }}" {% if code in doctor.time_slots %}checked{% endif %}>
+                  <label class="form-check-label" for="slot_{{ code }}">{{ label }}</label>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <button class="btn btn-primary" type="submit">Update Availability</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>Appointments</strong></div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped align-middle">
+            <thead>
+              <tr><th>Date</th><th>Time</th><th>Patient</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {% for appt in appointments %}
+                <tr>
+                  <td>{{ appt.appointment_date }}</td>
+                  <td>{{ appt.time_slot }}</td>
+                  <td>{{ appt.patient.user.get_full_name|default:appt.patient.user.username }}</td>
+                  <td>{{ appt.get_status_display }}</td>
+                  <td>
+                    <form method="post" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="change_status">
+                      <input type="hidden" name="appointment_id" value="{{ appt.pk }}">
+                      {% if appt.status != appt.Status.CONFIRMED %}
+                        <button class="btn btn-sm btn-success me-1" name="status" value="confirm">Confirm</button>
+                      {% endif %}
+                      {% if appt.status != appt.Status.COMPLETED %}
+                        <button class="btn btn-sm btn-secondary me-1" name="status" value="complete">Complete</button>
+                      {% endif %}
+                      {% if appt.status != appt.Status.CANCELLED %}
+                        <button class="btn btn-sm btn-danger" name="status" value="cancel">Cancel</button>
+                      {% endif %}
+                    </form>
+
+                    <!-- Reschedule by doctor -->
+                    <form method="post" class="d-inline ms-2">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="reschedule">
+                      <input type="hidden" name="appointment_id" value="{{ appt.pk }}">
+                      <input type="date" name="new_date" class="form-control form-control-sm d-inline w-auto" required>
+                      <select name="new_time_slot" class="form-select form-select-sm d-inline w-auto ms-1" required>
+                        {% for code,label in time_slots_choices %}
+                          <option value="{{ code }}">{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                      <button class="btn btn-sm btn-outline-primary ms-1" type="submit">Reschedule</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center">No appointments.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-12">
+    <h1 class="h4">Admin Dashboard</h1>
+  </div>
+
+  {% if message %}
+    <div class="col-12"><div class="alert alert-success">{{ message }}</div></div>
+  {% endif %}
+  {% if error %}
+    <div class="col-12"><div class="alert alert-danger">{{ error }}</div></div>
+  {% endif %}
+
+  <div class="col-12">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header"><strong>Users</strong></div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for u in users %}
+                <tr>
+                  <td>{{ u.username }}</td>
+                  <td>{{ u.email }}</td>
+                  <td>{{ u.role }}</td>
+                  <td>
+                    {% if not u.is_superuser %}
+                      <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="set_role"/>
+                        <input type="hidden" name="user_id" value="{{ u.pk }}"/>
+                        <select name="role" class="form-select form-select-sm d-inline w-auto me-1">
+                          <option value="PATIENT" {% if u.role == 'PATIENT' %}selected{% endif %}>Patient</option>
+                          <option value="DOCTOR" {% if u.role == 'DOCTOR' %}selected{% endif %}>Doctor</option>
+                          <option value="ADMIN" {% if u.role == 'ADMIN' %}selected{% endif %}>Admin</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary me-1" type="submit">Set Role</button>
+                      </form>
+
+                      <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="create_doctor"/>
+                        <input type="hidden" name="user_id" value="{{ u.pk }}"/>
+                        <input type="text" name="specialization" class="form-control form-control-sm d-inline w-auto me-1" placeholder="Specialization">
+                        <button class="btn btn-sm btn-success me-1" type="submit">Create Doctor</button>
+                      </form>
+
+                      <form method="post" class="d-inline" onsubmit="return confirm('Delete user?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_user"/>
+                        <input type="hidden" name="user_id" value="{{ u.pk }}"/>
+                        <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                      </form>
+                    {% else %}
+                      <em class="text-muted">superuser</em>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header"><strong>Doctors</strong></div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead><tr><th>Doctor</th><th>Specialization</th><th>Available Days</th><th>Time Slots</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for d in doctors %}
+                <tr>
+                  <td>Dr. {{ d.user.get_full_name|default:d.user.username }}</td>
+                  <td>{{ d.specialization }}</td>
+                  <td>{{ d.available_days|join:", " }}</td>
+                  <td>{{ d.time_slots|join:", " }}</td>
+                  <td>
+                    <form method="post" class="d-inline" onsubmit="return confirm('Delete doctor profile?');">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete_doctor"/>
+                      <input type="hidden" name="doctor_id" value="{{ d.pk }}"/>
+                      <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                    </form>
+                    <a class="btn btn-sm btn-outline-secondary ms-1" href="{% url 'doctor-dashboard' %}">Doctor Dashboard</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center">No doctors found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>Appointments</strong></div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead><tr><th>Date</th><th>Time</th><th>Doctor</th><th>Patient</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for a in appointments %}
+                <tr>
+                  <td>{{ a.appointment_date }}</td>
+                  <td>{{ a.time_slot }}</td>
+                  <td>Dr. {{ a.doctor.user.get_full_name|default:a.doctor.user.username }}</td>
+                  <td>{{ a.patient.user.get_full_name|default:a.patient.user.username }}</td>
+                  <td>{{ a.get_status_display }}</td>
+                  <td>
+                    <form method="post" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="update_appointment_status"/>
+                      <input type="hidden" name="appointment_id" value="{{ a.pk }}"/>
+                      <select name="status" class="form-select form-select-sm d-inline w-auto me-1">
+                        {% for code,label in a.Status.choices %}
+                          <option value="{{ code }}" {% if a.status == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                      <button class="btn btn-sm btn-primary me-1" type="submit">Set</button>
+                    </form>
+
+                    <!-- Admin reschedule -->
+                    <form method="post" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="reschedule_appointment"/>
+                      <input type="hidden" name="appointment_id" value="{{ a.pk }}"/>
+                      <input type="date" name="new_date" class="form-control form-control-sm d-inline w-auto me-1" required>
+                      <select name="new_time_slot" class="form-select form-select-sm d-inline w-auto me-1" required>
+                        {% for code,label in a.doctor.TIME_SLOTS %}
+                          <option value="{{ code }}">{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                      <button class="btn btn-sm btn-outline-primary me-1" type="submit">Reschedule</button>
+                    </form>
+
+                    <form method="post" class="d-inline" onsubmit="return confirm('Delete appointment?');">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete_appointment"/>
+                      <input type="hidden" name="appointment_id" value="{{ a.pk }}"/>
+                      <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6" class="text-center">No appointments.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

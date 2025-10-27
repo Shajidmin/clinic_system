@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h1 class="h4">Appointments Report</h1>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Summary</h5>
+        <table class="table table-borderless mb-0">
+          <tbody>
+            <tr><td>Total appointments</td><td class="text-end">{{ total }}</td></tr>
+            <tr><td>Booked</td><td class="text-end">{{ booked }}</td></tr>
+            <tr><td>Confirmed</td><td class="text-end">{{ confirmed }}</td></tr>
+            <tr><td>Completed</td><td class="text-end">{{ completed }}</td></tr>
+            <tr><td>Cancelled</td><td class="text-end">{{ cancelled }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'admin-dashboard' %}">Back to Admin</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

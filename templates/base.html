@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Health Clinic{% endblock %}</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    /* color variables for comfortable light/dark themes */
+    :root{
+      --page-bg-light: linear-gradient(180deg, #f5f8fb 0%, #eef5fb 100%);
+      --page-bg-dark: radial-gradient(circle at 10% 10%, #071021 0%, #071421 60%);
+      --card-bg-light: rgba(255,255,255,0.9);
+      --card-bg-dark: rgba(20,25,30,0.85);
+      --muted: #6c757d;
+      --accent: #2563eb; /* soft blue */
+    }
+
+    /* apply theme-aware backgrounds */
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      transition: background .25s ease, color .25s ease;
+      background: var(--page-bg-light);
+      color: #0f1720;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    body[data-theme="dark"] {
+      background: var(--page-bg-dark);
+      color: #e6eef8;
+    }
+
+    /* popup animation: run once and keep final state during animation */
+    @keyframes pop {
+      0% { transform: translateY(8px) scale(.98); opacity: 0; filter: blur(6px); }
+      60% { transform: translateY(-4px) scale(1.01); opacity: 1; filter: blur(0); }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .popup {
+      animation: pop .36s cubic-bezier(.2,.9,.3,1);
+      animation-iteration-count: 1;
+      animation-fill-mode: both; /* keep end state while animation is running */
+    }
+
+    /* center small cards nicely */
+    .center-wrapper {
+      min-height: calc(100vh - 84px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* card styling for soft glass effect */
+    .card {
+      background: var(--card-bg-light);
+      border: 1px solid rgba(30,41,59,0.04);
+      border-radius: .6rem;
+      box-shadow: 0 6px 20px rgba(16,24,40,0.06);
+      transition: transform .12s ease, box-shadow .12s ease, background .2s ease;
+    }
+    body[data-theme="dark"] .card {
+      background: rgba(16,22,28,0.82);
+      color: #e6eef8;
+      border: 1px solid rgba(255,255,255,0.03);
+      box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+    }
+    /* Only apply hover lift to cards that are NOT currently playing the popup animation */
+    .card:not(.popup):hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(2,6,23,0.08); }
+
+    /* subtle header link group style (used on index) */
+    .site-links {
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: .02em;
+      margin-top: .5rem;
+    }
+    .site-links a {
+      color: var(--muted);
+      text-decoration: none;
+      padding: .25rem .45rem;
+      border-radius: .25rem;
+    }
+    .site-links a:hover { color: var(--accent); background: rgba(37,99,235,0.06); }
+
+    /* larger hero text readability */
+    .hero-title { font-weight:700; color: inherit; }
+    .hero-note { color: var(--muted); font-size:1rem; margin-top:.5rem; }
+
+    /* make login/register inputs a bit larger and smoother */
+    .form-control { border-radius: .45rem; }
+    .btn-primary { background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%); border: none; }
+    .btn-outline-primary { border-radius:.45rem; }
+
+    /* ensure footer small text is legible on dark */
+    body[data-theme="dark"] .text-muted { color: #9aa8bd !important; }
+
+    /* Dark-mode overrides — add into existing <style> (append these rules) */
+body[data-theme="dark"] {
+  color: #e6eef8;
+  background: var(--page-bg-dark);
+}
+
+/* Links and nav */
+body[data-theme="dark"] a,
+body[data-theme="dark"] .nav-link,
+body[data-theme="dark"] .site-links a {
+  color: #9ec8ff;
+}
+body[data-theme="dark"] a:hover,
+body[data-theme="dark"] .nav-link:hover,
+body[data-theme="dark"] .site-links a:hover {
+  color: #d0e8ff;
+}
+
+/* Navbar */
+body[data-theme="dark"] .navbar {
+  background: rgba(10,15,20,0.4) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+body[data-theme="dark"] .navbar .navbar-brand {
+  color: #cfe6ff;
+}
+
+/* Cards and headers */
+body[data-theme="dark"] .card {
+  background: rgba(16,22,28,0.82);
+  color: #e6eef8;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+body[data-theme="dark"] .card .card-header,
+body[data-theme="dark"] .card .card-footer {
+  background: rgba(10,14,18,0.35);
+  color: #d7e9ff;
+}
+
+/* Forms */
+body[data-theme="dark"] .form-control {
+  background: rgba(255,255,255,0.02);
+  color: #e6eef8;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+body[data-theme="dark"] .form-control::placeholder {
+  color: rgba(230,238,248,0.48);
+}
+
+/* Buttons */
+body[data-theme="dark"] .btn-primary {
+  color: #fff;
+}
+body[data-theme="dark"] .btn-outline-primary {
+  border-color: rgba(158,200,255,0.12);
+  color: #bfe0ff;
+}
+
+/* Alerts (ensure readable text on alert backgrounds) */
+body[data-theme="dark"] .alert {
+  color: #031428;
+}
+body[data-theme="dark"] .alert.alert-info {
+  background: rgba(20,60,100,0.12);
+  color: #bfe0ff;
+  border: 1px solid rgba(37,99,235,0.12);
+}
+body[data-theme="dark"] .alert.alert-success {
+  background: rgba(22,66,26,0.12);
+  color: #b7f0c5;
+  border: 1px solid rgba(52,211,153,0.08);
+}
+body[data-theme="dark"] .alert.alert-danger {
+  background: rgba(60,10,10,0.12);
+  color: #ffc4c4;
+  border: 1px solid rgba(255,99,99,0.08);
+}
+
+/* Muted text */
+body[data-theme="dark"] .text-muted {
+  color: #9aa8bd !important;
+}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">Health Clinic</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'patient-dashboard' %}">Patient</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'doctor-dashboard' %}">Doctor</a></li>
+          {% endif %}
+        </ul>
+
+        <div class="d-flex align-items-center">
+          <button id="theme-toggle" class="btn btn-outline-secondary btn-sm me-2" aria-label="Toggle theme">Theme: <span id="theme-label">auto</span></button>
+
+          {% if user.is_authenticated %}
+            <span class="me-2 small text-muted">Signed in as {{ user.username }}</span>
+            <a class="btn btn-outline-primary btn-sm" href="{% url 'logout' %}">Logout</a>
+          {% else %}
+            <a class="btn btn-outline-primary btn-sm me-2" href="{% url 'login' %}">Login</a>
+            <a class="btn btn-primary btn-sm" href="{% url 'register' %}">Register</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container my-4">
+    {# Render Django messages (bootstrap alerts) #}
+    {% if messages %}
+      <div class="mb-3">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Bootstrap 5 JS (bundle includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Remove the .popup class after the initial animation finishes so the element
+    // doesn't re-animate and normal hover styles can apply afterwards.
+    (function(){
+      try {
+        document.querySelectorAll('.popup').forEach(el => {
+          el.addEventListener('animationend', () => {
+            el.classList.remove('popup');
+          }, { once: true });
+        });
+      } catch(e) {
+        // silent fail on older browsers
+      }
+    })();
+  </script>
+
+  <script>
+    (function(){
+      const htmlEl = document.documentElement;
+      const bodyEl = document.body;
+      const toggleBtn = document.getElementById('theme-toggle');
+      const label = document.getElementById('theme-label');
+
+      function applyTheme(pref) {
+        if (pref === 'auto') {
+          const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          bodyEl.setAttribute('data-theme', dark ? 'dark' : 'light');
+        } else {
+          bodyEl.setAttribute('data-theme', pref === 'dark' ? 'dark' : 'light');
+        }
+        label.textContent = pref;
+      }
+
+      function getStored() {
+        return localStorage.getItem('site-theme') || 'auto';
+      }
+      function setStored(v) {
+        localStorage.setItem('site-theme', v);
+      }
+      function nextTheme(current) {
+        if (current === 'auto') return 'light';
+        if (current === 'light') return 'dark';
+        return 'auto';
+      }
+
+      let current = getStored();
+      applyTheme(current);
+
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+          if (getStored() === 'auto') applyTheme('auto');
+        });
+      }
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(){
+          current = nextTheme(getStored());
+          setStored(current);
+          applyTheme(current);
+        });
+      }
+    })();
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

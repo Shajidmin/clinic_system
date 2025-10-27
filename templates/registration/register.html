@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="center-wrapper">
+  <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+    <div class="card popup shadow-sm">
+      <div class="card-header"><strong>Create an account</strong></div>
+      <div class="card-body">
+        <div id="register-alerts"></div>
+
+        <form id="register-form" method="post" class="row g-2">
+          {% csrf_token %}
+          <div class="col-12">
+            <label class="form-label" for="id_username">Username</label>
+            <input name="username" id="id_username" class="form-control" required />
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="id_email">Email</label>
+            <input name="email" id="id_email" type="email" class="form-control" />
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="id_password">Password</label>
+            <input name="password" id="id_password" type="password" class="form-control" required />
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="id_role">Role</label>
+            <select name="role" id="id_role" class="form-select">
+              <option value="PATIENT" selected>Patient</option>
+              <option value="DOCTOR">Doctor</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <button id="register-submit" class="btn btn-primary w-100" type="submit">Register</button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer text-center">
+        <small>Already have an account? <a href="{% url 'login' %}">Login</a></small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const form = document.getElementById('register-form');
+  const alerts = document.getElementById('register-alerts');
+  const submitBtn = document.getElementById('register-submit');
+
+  function showAlert(message, type='danger') {
+    alerts.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>`;
+    // scroll to alert on small screens
+    if (window.innerWidth < 768) alerts.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  form.addEventListener('submit', function(e){
+    // prefer AJAX submit for better UX; fallback to normal submit if fetch not available
+    if (!window.fetch) return; // let browser do default submit
+    e.preventDefault();
+    alerts.innerHTML = '';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+
+    const formData = new FormData(form);
+
+    fetch(window.location.href, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData,
+      credentials: 'same-origin'
+    }).then(async resp => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Register';
+
+      // try to parse JSON, otherwise read text
+      let data = null;
+      const ct = resp.headers.get('Content-Type') || resp.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        try {
+          data = await resp.json();
+        } catch (err) {
+          data = { error: 'Invalid server response' };
+        }
+      } else {
+        const text = await resp.text();
+        // try to extract a short message from HTML/text, fallback to text
+        data = { error: (text && text.length < 200 ? text : 'Registration failed') };
+      }
+
+      if (!resp.ok) {
+        const msg = (data && (data.error || data.detail)) || 'Registration failed';
+        showAlert(msg, 'danger');
+        return;
+      }
+
+      if (data && data.redirect) {
+        // show success then redirect
+        showAlert('Account created. Redirecting...', 'success');
+        setTimeout(() => { window.location.href = data.redirect; }, 600);
+      } else {
+        showAlert('Account created. Redirecting...', 'success');
+        setTimeout(() => { window.location.reload(); }, 600);
+      }
+    }).catch(err => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Register';
+      showAlert('Network error. Please try again.', 'danger');
+      console.error(err);
+    });
+  });
+})();
+</script>
+
+{% endblock %}
