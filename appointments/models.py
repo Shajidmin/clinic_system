@@ -48,57 +48,39 @@ class Doctor(models.Model):
         return f"Dr. {self.user.get_full_name()} - {self.specialization}"
 
 class Patient(models.Model):
-	"""
-	Patient profile linked one-to-one with the project's User model.
-	Fields:
-	 - user: one-to-one link to AUTH_USER_MODEL
-	 - age: positive integer
-	 - gender: limited choices
-	 - contact: phone / contact string
-	"""
-	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='patient')
-	age = models.PositiveIntegerField()
-	GENDER_CHOICES = [
-		('M', 'Male'),
-		('F', 'Female'),
-		('O', 'Other'),
-	]
-	gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
-	contact = models.CharField(max_length=20)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='patient')
+    age = models.PositiveIntegerField()
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+    ]
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
+    contact = models.CharField(max_length=20)
 
-	def __str__(self):
-		# Fall back to username if full name is not set
-		return f"{getattr(self.user, 'get_full_name', lambda: None)() or getattr(self.user, 'username', str(self.user))} - Patient"
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - Patient"
 
 class Appointment(models.Model):
-	"""
-	Appointment linked to a Doctor and a Patient.
-	Fields:
-	 - doctor: FK to Doctor
-	 - patient: FK to Patient
-	 - appointment_date: date of appointment
-	 - time_slot: time slot (choices from Doctor.TIME_SLOTS)
-	 - status: appointment lifecycle status
-	"""
-	class Status(models.TextChoices):
-		BOOKED = 'BOOKED', 'Booked'
-		CONFIRMED = 'CONFIRMED', 'Confirmed'
-		COMPLETED = 'COMPLETED', 'Completed'
-		CANCELLED = 'CANCELLED', 'Cancelled'
+    class Status(models.TextChoices):
+        BOOKED = 'BOOKED', 'Booked'
+        CONFIRMED = 'CONFIRMED', 'Confirmed'
+        COMPLETED = 'COMPLETED', 'Completed'
+        CANCELLED = 'CANCELLED', 'Cancelled'
 
-	doctor = models.ForeignKey('Doctor', on_delete=models.CASCADE, related_name='appointments')
-	patient = models.ForeignKey('Patient', on_delete=models.CASCADE, related_name='appointments')
-	appointment_date = models.DateField()
-	time_slot = models.CharField(max_length=5, choices=Doctor.TIME_SLOTS)
-	status = models.CharField(max_length=10, choices=Status.choices, default=Status.BOOKED)
-	created_at = models.DateTimeField(auto_now_add=True)
-	updated_at = models.DateTimeField(auto_now=True)
+    doctor = models.ForeignKey('Doctor', on_delete=models.CASCADE, related_name='appointments')
+    patient = models.ForeignKey('Patient', on_delete=models.CASCADE, related_name='appointments')
+    appointment_date = models.DateField()
+    time_slot = models.CharField(max_length=5, choices=Doctor.TIME_SLOTS)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.BOOKED)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-	class Meta:
-		unique_together = ('doctor', 'appointment_date', 'time_slot')
-		ordering = ['appointment_date', 'time_slot']
+    class Meta:
+        unique_together = ('doctor', 'appointment_date', 'time_slot')
+        ordering = ['appointment_date', 'time_slot']
 
-	def __str__(self):
-		doctor_name = self.doctor.user.get_full_name() or self.doctor.user.username
-		patient_name = self.patient.user.get_full_name() or self.patient.user.username
-		return f"{self.appointment_date} {self.time_slot} - Dr. {doctor_name} with {patient_name}"
+    def __str__(self):
+        doctor_name = self.doctor.user.get_full_name() or self.doctor.user.username
+        patient_name = self.patient.user.get_full_name() or self.patient.user.username
+        return f"{self.appointment_date} {self.time_slot} - Dr. {doctor_name} with {patient_name}"
